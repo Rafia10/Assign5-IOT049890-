@@ -23,16 +23,15 @@ extern crate futures;
 use futures::{future, Future};
 use actix::*;
 
-// this is our Message
 struct Sum(usize, usize);
 
-// we have to define type of response for `Sum` message
+
 impl ResponseType for Sum {
     type Item = usize;
     type Error = ();
 }
 
-// Actor definition
+//  definition
 struct Addit;
 
 impl Actor for Addit {
@@ -42,28 +41,24 @@ impl Actor for Addit {
 // now we need to define `MessageHandler` for `Sum` message.
 impl Handler<Sum> for Addit {
 
-    fn handle(&mut self, msg: Sum, ctx: &mut Context<Self>) -> Response<Self, Sum> {
+    fn handle(&mut self, msg: Sum, ctx /*Define context type*/: &mut Context<Self>) -> Response<Self, Sum> {
         Self::reply(msg.0 + msg.1)
     }
 }
 
 fn main() {
-    let system = System::new("test");
+    let system = System::new("ADDIT APPLICATION");
 
-    let addr: Address<_> = Summator.start();
-
-    // Address<A>::call() returns ActorFuture object, so we need to wait for result.
-    // ActorFuture makes sense within Actor execution context, but we can use
-    // Address<A>::call_fut() which return simple Future object.
-    let res = addr.call_fut(Sum(10, 5));
+    let addr: Address<_> = Addit.start();
+    let res = addr.call_fut(Sum(25, 5));//here we are calling future
     
     system.handle().spawn(res.then(|res| {
         match res {
-            Ok(Ok(result)) => println!("SUM: {}", result),
+            Ok(Ok(result)) => println!("SUM OF GIVEN NUMBERS IS: {}", result),
             _ => println!("Something wrong"),
         }
         
-        Arbiter::system().send(msgs::SystemExit(0));
+        Arbiter::system().send(msgs::SystemExit(0)); //Arbiter controls event loop in it's thread. Each arbiter runs in separate thread.
         future::result(Ok(()))
     }));
 
